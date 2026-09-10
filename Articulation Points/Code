@@ -1,0 +1,91 @@
+#include <iostream>
+#include <vector>
+
+void findArticulationPoints(
+	int node,
+	int parent,
+	const std::vector<std::vector<int>>& graph,
+	std::vector<bool>& visited,
+	std::vector<int>& discoveryTime,
+	std::vector<int>& lowestTime,
+	std::vector<bool>& articulationPoint,
+	int& timer) {
+	visited[node] = true;
+	discoveryTime[node] = lowestTime[node] = timer++;
+	int children = 0;
+
+	for (int neighbor : graph[node]) {
+		if (neighbor == parent) {
+			continue;
+		}
+
+		if (!visited[neighbor]) {
+			++children;
+			findArticulationPoints(
+				neighbor, node, graph, visited, discoveryTime,
+				lowestTime, articulationPoint, timer);
+
+			lowestTime[node] = std::min(lowestTime[node], lowestTime[neighbor]);
+
+			if (parent != -1 && lowestTime[neighbor] >= discoveryTime[node]) {
+				articulationPoint[node] = true;
+			}
+		} else {
+			lowestTime[node] = std::min(lowestTime[node], discoveryTime[neighbor]);
+		}
+	}
+
+	if (parent == -1 && children > 1) {
+		articulationPoint[node] = true;
+	}
+}
+
+int main() {
+	int vertices;
+	int edges;
+
+	std::cout << "Enter number of vertices and edges: ";
+	std::cin >> vertices >> edges;
+
+	std::vector<std::vector<int>> graph(vertices);
+
+	std::cout << "Enter each edge (u v), using vertices 0 to " << vertices - 1 << ":\n";
+	for (int i = 0; i < edges; ++i) {
+		int first;
+		int second;
+		std::cin >> first >> second;
+		graph[first].push_back(second);
+		graph[second].push_back(first);
+	}
+
+	std::vector<bool> visited(vertices, false);
+	std::vector<int> discoveryTime(vertices, -1);
+	std::vector<int> lowestTime(vertices, -1);
+	std::vector<bool> articulationPoint(vertices, false);
+	int timer = 0;
+
+	for (int vertex = 0; vertex < vertices; ++vertex) {
+		if (!visited[vertex]) {
+			findArticulationPoints(
+				vertex, -1, graph, visited, discoveryTime,
+				lowestTime, articulationPoint, timer);
+		}
+	}
+
+	std::cout << "Articulation points: ";
+	bool found = false;
+	for (int vertex = 0; vertex < vertices; ++vertex) {
+		if (articulationPoint[vertex]) {
+			std::cout << vertex << " ";
+			found = true;
+		}
+	}
+
+	if (!found) {
+		std::cout << "None";
+	}
+	std::cout << '\n';
+
+	return 0;
+}
+

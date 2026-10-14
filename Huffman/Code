@@ -1,0 +1,147 @@
+
+#include <iostream>
+#include <queue>
+#include <unordered_map>
+#include <string>
+#include <vector>
+using namespace std;
+
+struct Node {
+    char ch;
+    int freq;
+    Node *left, *right;
+
+    Node(char c, int f) {
+        ch = c;
+        freq = f;
+        left = right = nullptr;
+    }
+};
+
+struct Compare {
+    bool operator()(Node* a, Node* b) {
+        return a->freq > b->freq;
+    }
+};
+
+// Generate Huffman codes
+void generateCodes(Node* root, string code,
+                   unordered_map<char, string>& codes) {
+    if (!root)
+        return;
+
+    if (!root->left && !root->right) {
+        codes[root->ch] = code.empty() ? "0" : code;
+        return;
+    }
+
+    generateCodes(root->left, code + "0", codes);
+    generateCodes(root->right, code + "1", codes);
+}
+
+// Build Huffman tree
+Node* buildHuffmanTree(const string& text) {
+    unordered_map<char, int> freq;
+
+    for (char ch : text)
+        freq[ch]++;
+
+    priority_queue<Node*, vector<Node*>, Compare> pq;
+
+    for (auto& p : freq)
+        pq.push(new Node(p.first, p.second));
+
+    while (pq.size() > 1) {
+        Node* left = pq.top();
+        pq.pop();
+
+        Node* right = pq.top();
+        pq.pop();
+
+        Node* parent = new Node('\0',
+                                left->freq + right->freq);
+        parent->left = left;
+        parent->right = right;
+
+        pq.push(parent);
+    }
+
+    return pq.empty() ? nullptr : pq.top();
+}
+
+// Decode binary string
+string decode(Node* root, const string& encoded) {
+    if (!root)
+        return "";
+
+    // Special case: input contains only one unique character
+    if (!root->left && !root->right) {
+        return string(encoded.size(), root->ch);
+    }
+
+    string result;
+    Node* current = root;
+
+    for (char bit : encoded) {
+        if (bit == '0')
+            current = current->left;
+        else if (bit == '1')
+            current = current->right;
+        else
+            return ""; // Invalid encoded input
+
+        if (!current)
+            return "";
+
+        if (!current->left && !current->right) {
+            result += current->ch;
+            current = root;
+        }
+    }
+
+    // An incomplete final code is invalid
+    if (current != root)
+        return "";
+
+    return result;
+}
+
+int main() {
+    string text;
+
+    cout << "Enter text to compress: ";
+    getline(cin, text);
+
+    if (text.empty()) {
+        cout << "Input text is empty.\n";
+        return 0;
+    }
+
+    Node* root = buildHuffmanTree(text);
+
+    unordered_map<char, string> codes;
+    generateCodes(root, "", codes);
+
+    cout << "\nHuffman Codes:\n";
+    for (auto& p : codes) {
+        cout << "'" << p.first << "' : "
+             << p.second << '\n';
+    }
+
+    string encoded;
+    for (char ch : text)
+        encoded += codes[ch];
+
+    cout << "\nOriginal text: " << text << '\n';
+    cout << "Encoded data:  " << encoded << '\n';
+
+    string decoded = decode(root, encoded);
+    cout << "Decoded text:  " << decoded << '\n';
+
+    cout << "\nOriginal size (8-bit characters): "
+         << text.size() * 8 << " bits\n";
+    cout << "Encoded size (excluding tree/code metadata): "
+         << encoded.size() << " bits\n";
+
+    return 0;
+}

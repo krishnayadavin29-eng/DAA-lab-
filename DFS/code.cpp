@@ -1,32 +1,65 @@
 #include <iostream>
 #include <vector>
 
+using namespace std;
 
-void DFS(std::vector<std::vector<int>>& graph, std::vector<bool>& visited, int node) {
-    visited[node] = true;
-    std::cout << node << " ";
+class Graph {
+    int V;  
+    vector<vector<int>> adj;  
 
-    for (int neighbor : graph[node]) {
-        if (!visited[neighbor]) {
-            DFS(graph, visited, neighbor);
+    void DFSUtil(int u, vector<bool>& visited, vector<int>& component) {
+        visited[u] = true;
+        component.push_back(u);
+
+        for (int v : adj[u]) {
+            if (!visited[v]) {
+                DFSUtil(v, visited, component);
+            }
         }
     }
-}
+
+public:
+    Graph(int V) {
+        this->V = V;
+        adj.resize(V);
+    }
+
+    void addEdge(int u, int v) {
+        adj[u].push_back(v);
+        adj[v].push_back(u); 
+    }
+
+    void findConnectedComponents() {
+        vector<bool> visited(V, false);
+        int componentCount = 0;
+
+        cout << "Connected Components:\n";
+        for (int i = 0; i < V; ++i) {
+            if (!visited[i]) {
+                vector<int> component;
+                DFSUtil(i, visited, component);
+                
+                componentCount++;
+                cout << "Component " << componentCount << ": ";
+                for (int node : component) {
+                    cout << node << " ";
+                }
+                cout << "\n";
+            }
+        }
+        cout << "Total number of connected components: " << componentCount << "\n";
+    }
+};
+
 int main() {
-    int vertices = 5;
-    std::vector<std::vector<int>> graph(vertices);
+    Graph g(6);
 
-    graph[0] = {1, 2};
-    graph[1] = {0, 3, 4};
-    graph[2] = {0};
-    graph[3] = {1};
-    graph[4] = {1};
+    g.addEdge(0, 1);
+    g.addEdge(1, 2);
+    
+    g.addEdge(3, 4);
 
-    std::vector<bool> visited(vertices, false);
-
-    std::cout << "DFS starting from node 0: ";
-    DFS(graph, visited, 0);
-    std::cout << std::endl;
+    g.findConnectedComponents();
 
     return 0;
 }
